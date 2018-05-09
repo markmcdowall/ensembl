@@ -319,6 +319,9 @@ INSERT INTO meta (species_id, meta_key, meta_value)
 INSERT INTO meta (species_id, meta_key, meta_value)
   VALUES (NULL, 'patch', 'patch_94_95_b.sql|vertebrate_division_rename');
 
+INSERT INTO meta (species_id, meta_key, meta_value)
+  VALUES (NULL, 'patch', 'patch_95_96_p.sql|rnaproduct_tables');
+
 
 /**
 @table meta_coord
@@ -2607,3 +2610,93 @@ CREATE TABLE operon_transcript_gene (
 ) COLLATE=latin1_swedish_ci ENGINE=MyISAM;
 
 
+/**
+@table rnaproduct
+@colour   #808000
+@desc Describes which parts of which precursor transcript are used in rnaproduct. The seq_start and seq_end columns are 1-based offsets into the relative coordinate system of transcript_id. i.e, if the rnaproduct starts at the first base of the transcript, seq_start would be 1. Transcripts are related to rnaproducts by the transcript_id key in this table.
+
+@column rnaproduct_id               Primary key, internal identifier.
+@column rnaproduct_type_id          Foreign key references to the @link rnaproduct_type table.
+@column transcript_id               Foreign key references to the @link transcript table.
+@column seq_start                   1-based offset into the relative coordinate system of transcript_id.
+@column seq_end                     1-based offset into the relative coordinate system of transcript_id.
+@column stable_id                   Release-independent stable identifier.
+@column version                     Stable identifier version number.
+@column created_date                Date created.
+@column modified_date               Date modified.
+*/
+
+
+CREATE TABLE rnaproduct (
+
+  rnaproduct_id               INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  rnaproduct_type_id          SMALLINT(5) UNSIGNED NOT NULL,
+  transcript_id               INT(10) UNSIGNED NOT NULL,
+  seq_start                   INT(10) NOT NULL,       # relative to transcript start
+  seq_end                     INT(10) NOT NULL,       # relative to transcript start
+  stable_id                   VARCHAR(128) DEFAULT NULL,
+  version                     SMALLINT UNSIGNED DEFAULT NULL,
+  created_date                DATETIME DEFAULT NULL,
+  modified_date               DATETIME DEFAULT NULL,
+
+  PRIMARY KEY (rnaproduct_id),
+  KEY transcript_idx (transcript_id),
+  KEY stable_id_idx (stable_id, version)
+
+) COLLATE=latin1_swedish_ci ENGINE=MyISAM;
+
+
+/**
+@table rnaproduct_attrib
+@colour   #808000
+@desc Enables storage of attributes that relate to rnaproducts.
+
+@column rnaproduct_id       Foreign key references to the @link transcript table.
+@column attrib_type_id      Foreign key references to the @link attrib_type table.
+@column value               Attribute value.
+
+@see rnaproduct
+
+*/
+
+
+CREATE TABLE rnaproduct_attrib (
+
+  rnaproduct_id               INT(10) UNSIGNED NOT NULL DEFAULT '0',
+  attrib_type_id              SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0',
+  value                       TEXT NOT NULL,
+
+  KEY type_val_idx (attrib_type_id, value(40)),
+  KEY val_only_idx (value(40)),
+  KEY rnaproduct_idx (rnaproduct_id),
+  UNIQUE KEY rnaproduct_attribx (rnaproduct_id, attrib_type_id, value(500))
+
+) COLLATE=latin1_swedish_ci ENGINE=MyISAM;
+
+
+/**
+@table rnaproduct_type
+@colour   #808000
+@desc Provides codes, names and desctriptions of rnaproduct types.
+
+@column rnaproduct_type_id   Primary key, internal identifier.
+@column code                 Attribute code, e.g. 'miRNA'.
+@column name                 Attribute name, e.g. 'microRNA'.
+@column description          Attribute description, e.g. 'mature microRNA'.
+
+@see seq_region_rnaproduct
+
+*/
+
+
+CREATE TABLE rnaproduct_type (
+
+  rnaproduct_type_id          SMALLINT(5) UNSIGNED NOT NULL AUTO_INCREMENT,
+  code                        VARCHAR(20) NOT NULL DEFAULT '',
+  name                        VARCHAR(255) NOT NULL DEFAULT '',
+  description                 TEXT,
+
+  PRIMARY KEY (rnaproduct_type_id),
+  UNIQUE KEY code_idx (code)
+
+) COLLATE=latin1_swedish_ci ENGINE=MyISAM;
