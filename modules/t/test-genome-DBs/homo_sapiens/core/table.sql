@@ -909,3 +909,47 @@ CREATE TABLE `xref` (
   KEY `info_type_idx` (`info_type`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1000007 DEFAULT CHARSET=latin1 COLLATE=latin1_bin;
 
+
+CREATE TABLE rnaproduct (
+
+  rnaproduct_id               INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  rnaproduct_type_id          SMALLINT(5) UNSIGNED NOT NULL,
+  transcript_id               INT(10) UNSIGNED NOT NULL,
+  seq_start                   INT(10) NOT NULL,       # relative to transcript start
+  seq_end                     INT(10) NOT NULL,       # relative to exon start
+  stable_id                   VARCHAR(128) DEFAULT NULL,
+  version                     SMALLINT UNSIGNED DEFAULT NULL,
+  created_date                DATETIME DEFAULT NULL,
+  modified_date               DATETIME DEFAULT NULL,
+
+  PRIMARY KEY (rnaproduct_id),
+  KEY transcript_idx (transcript_id),
+  KEY stable_id_idx (stable_id, version)
+
+) COLLATE=latin1_swedish_ci ENGINE=MyISAM;
+
+CREATE TABLE rnaproduct_attrib (
+
+  rnaproduct_id               INT(10) UNSIGNED NOT NULL DEFAULT '0',
+  attrib_type_id              SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0',
+  value                       TEXT NOT NULL,
+
+  KEY type_val_idx (attrib_type_id, value(40)),
+  KEY val_only_idx (value(40)),
+  KEY rnaproduct_idx (rnaproduct_id),
+  UNIQUE KEY rnaproduct_attribx (rnaproduct_id, attrib_type_id, value(500))
+
+) COLLATE=latin1_swedish_ci ENGINE=MyISAM;
+
+
+CREATE TABLE rnaproduct_type (
+
+  rnaproduct_type_id          SMALLINT(5) UNSIGNED NOT NULL AUTO_INCREMENT,
+  code                        VARCHAR(20) NOT NULL DEFAULT '',
+  name                        VARCHAR(255) NOT NULL DEFAULT '',
+  description                 TEXT,
+
+  PRIMARY KEY (rnaproduct_type_id),
+  UNIQUE KEY code_idx (code)
+
+) COLLATE=latin1_swedish_ci ENGINE=MyISAM;
