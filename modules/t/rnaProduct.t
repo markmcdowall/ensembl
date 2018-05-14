@@ -218,7 +218,7 @@ is($rp->type_id(), 2, 'type_id is 2 (i.e. miRNA)');
 # to make sure new_fast() call all of these fetch methods use does what it
 # is supposed to do.
 
-is($rp->seq(), 'GCTAACAGTTGGAGATTGTGCA', 'Can retrieve associated sequence');
+is($rp->seq(), 'AAAAACCCAGGAATCACCTGGA', 'Can retrieve associated sequence');
 
 # Do not check any data inside the Transcript object, it is not our job to
 # check database consistency. Just check that we do get something back.
