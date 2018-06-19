@@ -322,6 +322,9 @@ INSERT INTO meta (species_id, meta_key, meta_value)
 INSERT INTO meta (species_id, meta_key, meta_value)
   VALUES (NULL, 'patch', 'patch_95_96_p.sql|rnaproduct_tables');
 
+INSERT INTO meta (species_id, meta_key, meta_value)
+  VALUES (NULL, 'patch', 'patch_95_96_q.sql|add_object_type_rnaproduct');
+
 
 /**
 @table meta_coord
@@ -2305,7 +2308,7 @@ Each EnsEMBL object can be associated with zero or more xrefs. An xref object ca
 
 @column object_xref_id            Primary key, internal identifier.
 @column ensembl_id                Foreign key references to the @link seq_region, @link transcript, @link gene, @translation tables depending on ensembl_object_type.
-@column ensembl_object_type       Ensembl object type: 'RawContig', 'Transcript', 'Gene','Translation'.
+@column ensembl_object_type       Ensembl object type: 'RawContig', 'Transcript', 'Gene', 'Translation', ..., 'RNAProduct'
 @column xref_id                   Foreign key references to the @link xref table.
 @column linkage_annotation        Additional annotation on the linkage.
 @column analysis_id               Foreign key references to the @link analysis table.
@@ -2321,7 +2324,8 @@ CREATE TABLE object_xref (
   object_xref_id              INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   ensembl_id                  INT(10) UNSIGNED NOT NULL,
   ensembl_object_type         ENUM('RawContig', 'Transcript', 'Gene',
-                                   'Translation', 'Operon', 'OperonTranscript', 'Marker') NOT NULL,
+                                   'Translation', 'Operon', 'OperonTranscript',
+                                   'Marker', 'RNAProduct') NOT NULL,
   xref_id                     INT(10) UNSIGNED NOT NULL,
   linkage_annotation          VARCHAR(255) DEFAULT NULL,
   analysis_id                 SMALLINT UNSIGNED,
