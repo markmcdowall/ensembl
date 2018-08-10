@@ -3002,13 +3002,11 @@ sub get_all_DAS_Features {
 
 =head2 get_all_RNAProducts
 
-  Arg [1]    : optional int $type_id
-               The numerical ID of the rnaproduct type to retrieve values for.
-               FIXME: this should definitely take string codes instead.
-  Example    : @transc_mirnas = @{$transcript->get_all_RNAProducts(1)};
+  Arg [1]    : optional string $type_code type of rnaproducts to retrieve
+  Example    : @transc_mirnas = @{$transcript->get_all_RNAProducts('miRNA')};
                @transc_rnaproducts = @{$transcript->get_all_RNAProducts()};
   Description: Gets a list of RNAProducts of this transcript.
-               Optionally just get RNAProducts for given type ID.
+               Optionally just get RNAProducts for given type code.
   Returntype : listref Bio::EnsEMBL::RNAProduct
   Exceptions : none
   Caller     : general
@@ -3017,7 +3015,7 @@ sub get_all_DAS_Features {
 =cut
 
 sub get_all_RNAProducts {
-  my ($self, $type_id) = @_;
+  my ($self, $type_code) = @_;
 
   if (!exists $self->{'rnaproducts'}) {
     if (!$self->adaptor()) {
@@ -3028,8 +3026,8 @@ sub get_all_RNAProducts {
     $self->{'rnaproducts'} = $rnaproduct_adaptor->fetch_all_by_Transcript($self);
   }
 
-  if (defined $type_id) {
-    my @results = grep { $_->type_id() == $type_id } @{$self->{'rnaproducts'}};
+  if (defined $type_code) {
+    my @results = grep { $_->type_code() eq $type_code } @{$self->{'rnaproducts'}};
     return \@results;
   } else {
     return $self->{'rnaproducts'};
