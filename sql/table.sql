@@ -325,6 +325,9 @@ INSERT INTO meta (species_id, meta_key, meta_value)
 INSERT INTO meta (species_id, meta_key, meta_value)
   VALUES (NULL, 'patch', 'patch_95_96_q.sql|add_object_type_rnaproduct');
 
+INSERT INTO meta (species_id, meta_key, meta_value)
+  VALUES (NULL, 'patch', 'patch_95_96_r.sql|add_stable_id_event_type_rnaproduct');
+
 
 /**
 @table meta_coord
@@ -2006,7 +2009,7 @@ CREATE TABLE stable_id_event (
   new_stable_id             VARCHAR(128),
   new_version               SMALLINT,
   mapping_session_id        INT(10) UNSIGNED NOT NULL DEFAULT '0',
-  type                      ENUM('gene', 'transcript', 'translation') NOT NULL,
+  type                      ENUM('gene', 'transcript', 'translation', 'rnaproduct') NOT NULL,
   score                     FLOAT NOT NULL DEFAULT 0,
 
   UNIQUE KEY uni_idx (mapping_session_id, old_stable_id, new_stable_id, type),
