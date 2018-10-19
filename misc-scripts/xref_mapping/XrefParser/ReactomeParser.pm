@@ -22,9 +22,8 @@ package XrefParser::ReactomeParser;
 use strict;
 use warnings;
 use Carp;
-use DBI;
 
-use base qw( XrefParser::BaseParser );
+use parent qw( XrefParser::BaseParser );
 use XrefParser::Database;
 
 # Parse file of Reactome records and assign direct xrefs
@@ -34,7 +33,7 @@ use XrefParser::Database;
 
 sub run {
 
- my ($self, $ref_arg) = @_;
+  my ($self, $ref_arg) = @_;
   my $source_id    = $ref_arg->{source_id};
   my $species_id   = $ref_arg->{species_id};
   my $files        = $ref_arg->{files};
@@ -87,7 +86,7 @@ sub run {
   my $gene_reactome_source_id =  $self->get_source_id_for_source_name("reactome_gene", undef, $dbi);
   my $reactome_uniprot_source_id = $self->get_source_id_for_source_name("reactome", "uniprot", $dbi);
   if($reactome_source_id < 1 || $transcript_reactome_source_id < 1 || $gene_reactome_source_id < 1){
-    die "Could not find source id for reactome sources???\n";
+    croak "Could not find source id for reactome sources???\n";
   }
   else{
     print "Source_id = $reactome_source_id\n";
@@ -96,7 +95,7 @@ sub run {
   }
 
   if($reactome_uniprot_source_id < 1){
-    die "Could not find source id for reactome uniprot???\n";
+    croak "Could not find source id for reactome uniprot???\n";
   }
   else{
     print "Source_id = $reactome_uniprot_source_id\n";
@@ -108,12 +107,12 @@ sub run {
   foreach my $file (@$files) {
     my $reactome_io = $self->get_filehandle($file);
     if ($file =~ /UniProt/) { $is_uniprot = 1; }
-  # Example line:
-  # ENSG00000138685 REACT_111045    http://www.reactome.org/PathwayBrowser/#REACT_111045    Developmental Biology   TAS     Homo sapiens
+    # Example line:
+    # ENSG00000138685 REACT_111045    http://www.reactome.org/PathwayBrowser/#REACT_111045    Developmental Biology   TAS     Homo sapiens
     while (my $line = $reactome_io->getline() ) {
       chomp $line;
       my ($ensembl_stable_id, $reactome_id, $url, $description, $evidence, $species) = split /\t+/,$line;
-      if ($description!~ /^[A-Za-z0-9_,\(\)\/\-\.:\+'&;"\/\?%>\s\[\]]+$/) { next; }
+      if ($description!~ /^[A-Za-z0-9_,\(\)\/\-\.:\+'&;"\/\?%>\s\[\]]+$/) { next; } # Ignore descriptions with non-standard characters
   
       $species =~ s/\s/_/;
       $species = lc($species);
@@ -128,15 +127,16 @@ sub run {
         my $info_type = 'DIRECT';
         if ($is_uniprot) {
           if (defined($uniprot{$ensembl_stable_id})) {
-    # First check if it is a uniprot id
+            # First check if it is a uniprot id
             foreach my $xref_id (@{$uniprot{$ensembl_stable_id}}){
-              $self->add_dependent_xref({ master_xref_id => $xref_id,
-                                  acc            => $reactome_id,
-                                  label          => $reactome_id,
-                                  desc           => $description,
-                                  source_id      => $reactome_uniprot_source_id,
-                                  dbi            => $dbi,
-                                  species_id     => $species_id} );
+              $self->add_dependent_xref({ 
+                master_xref_id => $xref_id,
+                acc            => $reactome_id,
+                label          => $reactome_id,
+                desc           => $description,
+                source_id      => $reactome_uniprot_source_id,
+                dbi            => $dbi,
+                species_id     => $species_id} );
             }
             $info_type = 'DEPENDENT';
           }
@@ -151,22 +151,23 @@ sub run {
         }
         elsif ($ensembl_stable_id =~ /P[0-9]*$/) { $type = 'translation'; }
         else {
-  # Is not in Uniprot and does not match Ensembl stable id format
+          # Is not in Uniprot and does not match Ensembl stable id format
           print STDERR "Could not find type for $ensembl_stable_id\n";
           $err_count++;
           next;
         }
   
-  # Add new entry for reactome xref
-  # as well as direct xref to ensembl stable id
-        my $xref_id = $self->add_xref({ acc         => $reactome_id,
-                          label       => $reactome_id,
-                          desc        => $description,
-                          info_type   => $info_type,
-                          source_id   => $reactome_source_id,
-                          dbi         => $dbi,
-                          species_id  => $species_id} );
-  
+        # Add new entry for reactome xref
+        # as well as direct xref to ensembl stable id
+        my $xref_id = $self->add_xref({ 
+          acc         => $reactome_id,
+          label       => $reactome_id,
+          desc        => $description,
+          info_type   => $info_type,
+          source_id   => $reactome_source_id,
+          dbi         => $dbi,
+          species_id  => $species_id} );
+
         $self->add_direct_xref($xref_id, $ensembl_stable_id, $type, $dbi) if $type;
       }
     }
