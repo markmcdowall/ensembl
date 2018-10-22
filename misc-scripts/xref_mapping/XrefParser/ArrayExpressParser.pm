@@ -40,15 +40,12 @@ sub run_script {
   my $species_id   = $ref_arg->{species_id};
   my $species_name = $ref_arg->{species};
   my $file         = $ref_arg->{file};
-  my $verbose      = $ref_arg->{verbose};
+  my $verbose      = $ref_arg->{verbose} || 0;
   my $db           = $ref_arg->{dba};
-  my $dbi          = $ref_arg->{dbi};
-  $dbi = $self->dbi unless defined $dbi;
+  my $dbi          = $ref_arg->{dbi} || $self->dbi;
 
-  if((!defined $source_id) or (!defined $species_id) or (!defined $file) ){
-    croak "Need to pass source_id, species_id and file as pairs";
-  }
-  $verbose |=0;
+  croak "Need to pass source_id, species_id and file"
+    unless defined $source_id and defined $species_id and defined $file;
 
   my $project;
   my $user  ="ensro";
@@ -57,36 +54,35 @@ sub run_script {
   my $dbname;
   my $pass;
 
-  if($file =~ /project[=][>](\S+?)[,]/){
+  if($file =~ /project[=][>](\S+?)[,]/) {
     $project = $1;
   }
-  if($file =~ /host[=][>](\S+?)[,]/){
+  if($file =~ /host[=][>](\S+?)[,]/) {
     $host = $1;
   }
-  if($file =~ /port[=][>](\S+?)[,]/){
+  if($file =~ /port[=][>](\S+?)[,]/) {
     $port =  $1;
   }
-  if($file =~ /dbname[=][>](\S+?)[,]/){
+  if($file =~ /dbname[=][>](\S+?)[,]/) {
     $dbname = $1;
   }
-  if($file =~ /pass[=][>](\S+?)[,]/){
+  if($file =~ /pass[=][>](\S+?)[,]/) {
     $pass = $1;
   }
-  if($file =~ /user[=][>](\S+?)[,]/){
+  if($file =~ /user[=][>](\S+?)[,]/) {
     $user = $1;
   }
 
   my %species_id_to_names = $self->species_id2name($dbi);
-  if (defined $species_name) { push @{$species_id_to_names{$species_id}}, $species_name; }
-  if (!defined $species_id_to_names{$species_id}) { next; }
+  push @{$species_id_to_names{$species_id}}, $species_name if defined $species_name;
+  croak "Couldn't find names associated to species_id $species_id"
+    unless defined $species_id_to_names{$species_id};
+
   my $species_id_to_names = \%species_id_to_names;
   my $names = $species_id_to_names->{$species_id};
   my $species_lookup = $self->_get_species($verbose);
-  my $active = $self->_is_active($species_lookup, $names, $verbose);
- 
-  if (!$active) {
-      return;
-  }
+  croak "Species $species_id is not active in ArrayExpress"
+    unless $self->_is_active($species_lookup, $names, $verbose);
 
   $species_name = $species_id_to_names{$species_id}[0];
 
@@ -132,7 +128,8 @@ sub run_script {
   } elsif (defined $db) {
     $gene_adaptor = $db->get_GeneAdaptor();
   } else {
-      die("Missing or unsupported project value. Supported values: ensembl, ensemblgenomes");
+      croak "Missing host, project or db or unsupported project value " .
+	  "(supported values: ensembl, ensemblgenomes)";
   }
   print "Finished loading the registry\n" if $verbose;
 
@@ -140,34 +137,31 @@ sub run_script {
 
   my $xref_count = 0;
   foreach my $gene_stable_id (@stable_ids) {
-      
-      my $xref_id = $self->add_xref({ acc        => $gene_stable_id,
-					 label      => $gene_stable_id,
-					 source_id  => $source_id,
-					 species_id => $species_id,
-                                         dbi       => $dbi,
-					 info_type => "DIRECT"} );
+    my $xref_id = $self->add_xref({ acc        => $gene_stable_id,
+				    label      => $gene_stable_id,
+				    source_id  => $source_id,
+				    species_id => $species_id,
+				    dbi       => $dbi,
+				    info_type => "DIRECT"} );
 	
-      $self->add_direct_xref( $xref_id, $gene_stable_id, 'gene', '', $dbi);
-      if ($xref_id) {
-	 $xref_count++;
-      }
-  }
-	   
-  print "Added $xref_count DIRECT xrefs\n" if($verbose);
-  if ( !$xref_count ) {
-      return 1;    # 1 error
+    $self->add_direct_xref( $xref_id, $gene_stable_id, 'gene', undef, $dbi);
+
+    $xref_count++ if $xref_id;
   }
 
-  return 0; # successfull	   
+  croak "Couldn't parse any xref" unless $xref_count > 0;
+  print "Added $xref_count DIRECT xrefs\n" if $verbose;
 
+  return 0; # success
 }
 
 sub _get_species {
   my ($self, $verbose) = @_;
-  $verbose = (defined $verbose) ? $verbose : 0;
+  $verbose ||= 0;
   
-  my $ftp = Net::FTP->new($default_ftp_server, Debug => $verbose) or confess "Cannot connect to $default_ftp_server: $@";
+  my $ftp = Net::FTP->new($default_ftp_server, Debug => $verbose)
+    or confess "Cannot connect to $default_ftp_server: $@";
+
   $ftp->login("anonymous",'-anonymous@') or confess "Cannot login ", $ftp->message;
   $ftp->cwd($default_ftp_dir);
   my @files = $ftp->ls() or confess "Cannot change to $default_ftp_dir: $@";
@@ -178,12 +172,17 @@ sub _get_species {
     my ($species) = split(/\./, $file);
     $species_lookup{$species} = 1;
   }
+
   return \%species_lookup;
 }
 
 sub _is_active {
   my ($self, $species_lookup, $names, $verbose) = @_;
-  #Loop through the names and aliases first. If we get a hit then great
+  defined $species_lookup or croak "Must pass species lookup hash ref arg";
+  defined $names or croak "Must pass species names array ref arg";
+  $verbose ||= 0;
+
+  # Loop through the names and aliases first. If we get a hit then great
   my $active = 0;
   foreach my $name (@{$names}) {
     if($species_lookup->{$name}) {
@@ -192,6 +191,7 @@ sub _is_active {
       last;
     }
   }
+
   return $active;
 }
 
