@@ -23,12 +23,11 @@ use strict;
 use warnings;
 use Carp;
 use List::Util 1.45 qw(uniq);
-use Readonly;
 
 use parent qw( XrefParser::BaseParser );
 
 # Refseq sources to consider. Prefixes not in this list will be ignored
-Readonly my $REFSEQ_SOURCES => {
+my $REFSEQ_SOURCES = {
     NM => 'RefSeq_mRNA',
     NR => 'RefSeq_ncRNA',
     XM => 'RefSeq_mRNA_predicted',
@@ -178,6 +177,12 @@ sub xref_from_record {
 
   my ($acc) = $genbank_rec =~ /ACCESSION\s+(\S+)/x;
 
+  my $prefix = substr($acc, 0, 2);
+
+  # skip if acc is not of known type
+  return unless ( exists $REFSEQ_SOURCES->{$prefix} );
+
+
   my $acc_source_id = $self->source_id_from_acc($acc);
 
   my $xref = {
@@ -269,7 +274,7 @@ sub xref_from_record {
     $refseq_pair =~ s/\.\d*//;
 
     # Add xrefs for RefSeq mRNA as well where available
-    foreach my $refseq_acc (@{ $self->{refseq_accs}->{$refseq_pair} }) {
+    foreach my $refseq_acc (@{ $self->{refseq_ids}->{$refseq_pair} }) {
       foreach my $entrez_id (@{ $self->{entrez_ids}->{$gene_id} }) {
         $self->add_dependent_xref({
           master_xref_id => $refseq_acc,
