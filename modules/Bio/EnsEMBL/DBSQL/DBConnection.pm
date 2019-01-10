@@ -726,7 +726,7 @@ sub prepare {
   Exceptions : thrown if the SQL statement is empty, or if the internal
                database handle is not present
   Caller     : Adaptor modules
-  Status     : Stable
+  Status     : Experimental
 
 =cut
 
