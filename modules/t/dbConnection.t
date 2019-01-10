@@ -118,11 +118,11 @@ is_deeply($dbc->to_hash(), \%dbc_args, 'Checking to_hash() can roundtrip a DBCon
   #
   # 12 prepare_cached
   #
-  my $sth = $dbc->prepare_cached('SELECT * from gene limit 10');
-  $sth->execute;
-  my @row = $sth->fetchrow_array;
-  ok($sth->rows, "prepare_cached ($sth->rows)");
-  $sth->finish;
+  my $sth3 = $dbc->prepare_cached('SELECT gene_id, biotype FROM gene LIMIT 1');
+  $sth3->execute;
+  my @row = $sth3->fetchrow_array;
+  ok($sth3->rows, "prepare_cached ($sth->rows)");
+  $sth3->finish;
 }
 
 #
