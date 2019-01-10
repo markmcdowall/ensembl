@@ -1,12 +1,12 @@
 # Copyright [1999-2015] Wellcome Trust Sanger Institute and the EMBL-European Bioinformatics Institute
 # Copyright [2016-2019] EMBL-European Bioinformatics Institute
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #      http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -108,6 +108,17 @@ is_deeply($dbc->to_hash(), \%dbc_args, 'Checking to_hash() can roundtrip a DBCon
   # 11 prepare
   #
   my $sth = $dbc->prepare('SELECT * from gene limit 1');
+  $sth->execute;
+  my @row = $sth->fetchrow_array;
+  ok($sth->rows);
+  $sth->finish;
+}
+
+{
+  #
+  # 12 prepare_cached
+  #
+  my $sth = $dbc->prepare_cached('SELECT * from gene limit 10');
   $sth->execute;
   my @row = $sth->fetchrow_array;
   ok($sth->rows);
@@ -242,7 +253,7 @@ my $dbc_copy = mock_object($dbc);
   usleep(1000); #sleep 1ms
   is($pdbc->sql_helper()->execute_single_result(-SQL => 'select 1'), 1, 'Checking we get a 1 back from the DB');
   $dbc_copy->__is_called('reconnect', 0, "No need to reconnect as we have no interval set");
-  
+
   #Disconnect, set the interval to 1ms and sleep for 10ms. Skips reconnection as the connection is not active
   $dbc_copy->disconnect_if_idle();
   $pdbc->reconnect_interval(1);
@@ -250,7 +261,7 @@ my $dbc_copy = mock_object($dbc);
   $pdbc->check_reconnection();
   $dbc_copy->__is_called('connected', 1, "connected() was called since we had to check if the DBConnection was active");
   $dbc_copy->__is_called('reconnect', 0, "No need to reconnect as we have no interval set");
-  
+
   #Connect, set the interval to 1ms and sleep for 10ms. Reconnect
   $dbc_copy->connect();
   $dbc_copy->__clear();
@@ -271,7 +282,7 @@ my $dbc_copy = mock_object($dbc);
     };
     $dbc->db_handle;
   } qr/Cannot load.+::bogusdriver/, 'Checking for an error message from DBI detailing missing driver problems';
-  
+
   if($db->dbc->driver() eq 'mysql') {
     throws_ok {
       my $dbc = Bio::EnsEMBL::DBSQL::DBConnection->new(
