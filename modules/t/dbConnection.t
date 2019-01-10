@@ -114,6 +114,8 @@ is_deeply($dbc->to_hash(), \%dbc_args, 'Checking to_hash() can roundtrip a DBCon
   $sth->finish;
 }
 
+print "MYSQL VERSION: $DBD::mysql::VERSION";
+
 # {
 #   #
 #   # 12 prepare_cached
