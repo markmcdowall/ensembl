@@ -114,18 +114,16 @@ is_deeply($dbc->to_hash(), \%dbc_args, 'Checking to_hash() can roundtrip a DBCon
   $sth->finish;
 }
 
-print "MYSQL VERSION: $DBD::mysql::VERSION";
-
-# {
-#   #
-#   # 12 prepare_cached
-#   #
-#   my $sth = $dbc->prepare_cached('SELECT gene_id, biotype FROM gene LIMIT 1');
-#   $sth->execute;
-#   my @row = $sth->fetchrow_array;
-#   ok($sth->rows, "prepare_cached");
-#   $sth->finish;
-# }
+{
+  #
+  # 12 prepare_cached
+  #
+  my $sth = $dbc->prepare_cached('SELECT gene_id, biotype FROM gene LIMIT 1');
+  $sth->execute;
+  my @row = $sth->fetchrow_array;
+  ok($sth->rows, "prepare_cached");
+  $sth->finish;
+}
 
 #
 # try the database with the disconnect_when_inactive flag set.
@@ -149,8 +147,6 @@ ok(!$dbh->ping(), 'db_handle->ping()');
 }
 
 ok(!$dbh->ping(), 'db_handle->ping()');
-
-$dbh = $dbc->db_handle();
 
 #
 # try the same thing but with 2 connections at a time
