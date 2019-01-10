@@ -110,20 +110,20 @@ is_deeply($dbc->to_hash(), \%dbc_args, 'Checking to_hash() can roundtrip a DBCon
   my $sth = $dbc->prepare('SELECT * from gene limit 1');
   $sth->execute;
   my @row = $sth->fetchrow_array;
-  ok($sth->rows);
+  ok($sth->rows, 'prepare');
   $sth->finish;
 }
 
-# {
-#   #
-#   # 12 prepare_cached
-#   #
-#   my $sth = $dbc->prepare_cached('SELECT * from gene limit 10');
-#   $sth->execute;
-#   my @row = $sth->fetchrow_array;
-#   ok($sth->rows);
-#   $sth->finish;
-# }
+{
+  #
+  # 12 prepare_cached
+  #
+  my $sth = $dbc->prepare_cached('SELECT * from gene limit 10');
+  $sth->execute;
+  my @row = $sth->fetchrow_array;
+  ok($sth->rows, "prepare_cached ($sth->rows)");
+  $sth->finish;
+}
 
 #
 # try the database with the disconnect_when_inactive flag set.
@@ -133,7 +133,7 @@ my $dbh = $dbc->db_handle();
 
 $dbc->disconnect_when_inactive(1);
 
-ok(!$dbh->ping());
+ok(!$dbh->ping(), 'db_handle->ping()');
 
 {
   # reconnect should happen now
@@ -146,7 +146,7 @@ ok(!$dbh->ping());
   # disconnect should occur now
 }
 
-ok(!$dbh->ping());
+ok(!$dbh->ping(), 'db_handle->ping()');
 
 $dbh = $dbc->db_handle();
 
@@ -172,11 +172,11 @@ $dbh = $dbc->db_handle();
 }
 
 
-ok(!$dbh->ping());
+ok(!$dbh->ping(), 'dbh->ping()');
 
 $dbc->disconnect_when_inactive(0);
 
-ok($dbc->db_handle->ping());
+ok($dbc->db_handle->ping(), 'dbc->db_handle->ping()');
 
 {
   my $sth1 = $dbc->prepare('SELECT * from gene limit 1');
